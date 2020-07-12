@@ -4,7 +4,9 @@ import (
 	"bufio"
 	"crypto/rand"
 	"crypto/rsa"
+	"crypto/sha256"
 	"crypto/x509"
+	"encoding/base64"
 	"encoding/pem"
 	"log"
 	"os"
@@ -24,8 +26,84 @@ func GenerateKeyPair(keyPrefix string) {
 	createPublicPem(publicKey, keyPrefix+"_public_key")
 }
 
-// GetKeysFromPem - Get key pair from pem file
-func GetKeysFromPem(keyName string) (*rsa.PrivateKey, *rsa.PublicKey) {
+// GetPrivateKeyFromPem - Get private key from pem file
+func GetPrivateKeyFromPem(keyName string) *rsa.PrivateKey {
+	data := getKeyFromPem(keyName)
+
+	// Get private key
+	privateKey, err := x509.ParsePKCS1PrivateKey(data.Bytes)
+
+	if err != nil {
+		log.Fatalf("Error getting private key - %s", err)
+	}
+
+	return privateKey
+}
+
+// GetPublicKeyFromPem - Get public key from pem file
+func GetPublicKeyFromPem(keyName string) *rsa.PublicKey {
+	data := getKeyFromPem(keyName)
+
+	// Get public key
+	key, err := x509.ParsePKCS1PublicKey(data.Bytes)
+
+	if err != nil {
+		log.Fatalf("Error getting public key - %s", err)
+	}
+
+	return key
+}
+
+// Encrypt - Encrypt a message
+func Encrypt(message string, publicKey *rsa.PublicKey) string {
+	messageBytes := []byte(message)
+	label := []byte("")
+	hash := sha256.New()
+
+	ciphertext, err := rsa.EncryptOAEP(
+		hash,
+		rand.Reader,
+		publicKey, // external
+		messageBytes,
+		label,
+	)
+
+	if err != nil {
+		log.Fatalf("Error encrypting message - %s", err)
+	}
+
+	encrypted := base64.StdEncoding.EncodeToString(ciphertext)
+
+	return encrypted
+}
+
+// Decrypt - Decrypt a message
+func Decrypt(encryptedMessage string, privateKey *rsa.PrivateKey) string {
+	ciphertext, err := base64.StdEncoding.DecodeString(encryptedMessage)
+
+	if err != nil {
+		log.Fatalf("Erro decoding message to base64 - %s", err)
+	}
+
+	label := []byte("")
+	hash := sha256.New()
+
+	messageBytes, err := rsa.DecryptOAEP(
+		hash,
+		rand.Reader,
+		privateKey, // internal
+		ciphertext,
+		label,
+	)
+
+	if err != nil {
+		log.Fatalf("Erro decrypting message - %s", err)
+	}
+
+	return string(messageBytes)
+}
+
+func getKeyFromPem(keyName string) *pem.Block {
 	pemFile, err := os.Open("crypto/pem/" + keyName + ".pem")
 
 	defer pemFile.Close()
@@ -34,7 +112,7 @@ func GetKeysFromPem(keyName string) (*rsa.PrivateKey, *rsa.PublicKey) {
 		log.Fatalf("Erro opening pem file - %s", err)
 	}
 
-	// Get private key pem file info
+	// Get pem file info
 	pemInfo, err := pemFile.Stat()
 
 	if err != nil {
@@ -54,16 +132,7 @@ func GetKeysFromPem(keyName string) (*rsa.PrivateKey, *rsa.PublicKey) {
 	// Decode buffer
 	data, _ := pem.Decode(pemBytes)
 
-	// Get private key
-	privateKey, err := x509.ParsePKCS1PrivateKey(data.Bytes)
-
-	if err != nil {
-		log.Fatalf("Error getting private key - %s", err)
-	}
-
-	publicKey := &privateKey.PublicKey
-
-	return privateKey, publicKey
+	return data
 }
 
 func createPrivatePem(privateKey *rsa.PrivateKey, keyName string) {

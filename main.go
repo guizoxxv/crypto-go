@@ -39,6 +39,34 @@ func main() {
 					return nil
 				},
 			},
+			{
+				Name:  "encrypt",
+				Usage: "Encrypt message with RSA",
+				Action: func(c *cli.Context) error {
+					keyName := c.Args().Get(0)
+					message := c.Args().Get(1)
+
+					publicKey := crypto.GetPublicKeyFromPem(keyName)
+
+					fmt.Println(crypto.Encrypt(message, publicKey))
+
+					return nil
+				},
+			},
+			{
+				Name:  "decrypt",
+				Usage: "Decrypt message with RSA",
+				Action: func(c *cli.Context) error {
+					keyName := c.Args().Get(0)
+					encryptedMessage := c.Args().Get(1)
+
+					privateKey := crypto.GetPrivateKeyFromPem(keyName)
+
+					fmt.Println(crypto.Decrypt(encryptedMessage, privateKey))
+
+					return nil
+				},
+			},
 		},
 	}
 
