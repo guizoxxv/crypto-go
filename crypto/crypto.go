@@ -82,7 +82,7 @@ func Decrypt(encryptedMessage string, privateKey *rsa.PrivateKey) string {
 	ciphertext, err := base64.StdEncoding.DecodeString(encryptedMessage)
 
 	if err != nil {
-		log.Fatalf("Erro decoding message to base64 - %s", err)
+		log.Fatalf("Error decoding message to base64 - %s", err)
 	}
 
 	label := []byte("")

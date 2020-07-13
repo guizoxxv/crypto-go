@@ -4,8 +4,10 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strconv"
 
 	"example.com/cryptogo/crypto"
+	"example.com/cryptogo/fileprocesser"
 	"github.com/joho/godotenv"
 	"github.com/urfave/cli/v2"
 )
@@ -63,6 +65,50 @@ func main() {
 					privateKey := crypto.GetPrivateKeyFromPem(keyName)
 
 					fmt.Println(crypto.Decrypt(encryptedMessage, privateKey))
+
+					return nil
+				},
+			},
+			{
+				Name:  "generate-csv",
+				Usage: "Generate random csv file",
+				Action: func(c *cli.Context) error {
+					limitArg := c.Args().Get(0)
+					limit, err := strconv.Atoi(limitArg)
+
+					if err != nil {
+						log.Fatalf("Invalid limit '%d' - %s", limit, err)
+					}
+
+					fileprocesser.Generate(limit)
+
+					return nil
+				},
+			},
+			{
+				Name:  "encrypt-csv-rsa",
+				Usage: "Encrypt csv file with RSA",
+				Action: func(c *cli.Context) error {
+					keyName := c.Args().Get(0)
+					fileName := c.Args().Get(1)
+
+					publicKey := crypto.GetPublicKeyFromPem(keyName)
+
+					fileprocesser.EncryptCsv(fileName, publicKey)
+
+					return nil
+				},
+			},
+			{
+				Name:  "decrypt-csv-rsa",
+				Usage: "Decrypt csv file with RSA",
+				Action: func(c *cli.Context) error {
+					keyName := c.Args().Get(0)
+					fileName := c.Args().Get(1)
+
+					privateKey := crypto.GetPrivateKeyFromPem(keyName)
+
+					fileprocesser.DecryptCsv(fileName, privateKey)
 
 					return nil
 				},
