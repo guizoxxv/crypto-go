@@ -42,7 +42,7 @@ func main() {
 				},
 			},
 			{
-				Name:  "encrypt",
+				Name:  "encrypt-rsa",
 				Usage: "Encrypt message with RSA",
 				Action: func(c *cli.Context) error {
 					keyName := c.Args().Get(0)
@@ -50,13 +50,13 @@ func main() {
 
 					publicKey := crypto.GetPublicKeyFromPem(keyName)
 
-					fmt.Println(crypto.Encrypt(message, publicKey))
+					fmt.Println(crypto.EncryptRSA(message, publicKey))
 
 					return nil
 				},
 			},
 			{
-				Name:  "decrypt",
+				Name:  "decrypt-rsa",
 				Usage: "Decrypt message with RSA",
 				Action: func(c *cli.Context) error {
 					keyName := c.Args().Get(0)
@@ -64,7 +64,31 @@ func main() {
 
 					privateKey := crypto.GetPrivateKeyFromPem(keyName)
 
-					fmt.Println(crypto.Decrypt(encryptedMessage, privateKey))
+					fmt.Println(crypto.DecryptRSA(encryptedMessage, privateKey))
+
+					return nil
+				},
+			},
+			{
+				Name:  "encrypt-aes",
+				Usage: "Encrypt message with AES",
+				Action: func(c *cli.Context) error {
+					message := c.Args().Get(0)
+					key := crypto.HashKey("password")
+
+					fmt.Println(crypto.EncryptAES(message, key))
+
+					return nil
+				},
+			},
+			{
+				Name:  "decrypt-aes",
+				Usage: "Decrypt message with AES",
+				Action: func(c *cli.Context) error {
+					encryptedMessage := c.Args().Get(0)
+					key := crypto.HashKey("password")
+
+					fmt.Println(crypto.DecryptAES(encryptedMessage, key))
 
 					return nil
 				},

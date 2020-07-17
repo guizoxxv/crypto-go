@@ -83,7 +83,7 @@ func EncryptCsv(file string, publicKey *rsa.PublicKey) {
 		}
 
 		for i := range line {
-			line[i] = crypto.Encrypt(line[i], publicKey)
+			line[i] = crypto.EncryptRSA(line[i], publicKey)
 		}
 
 		err = writer.Write(line)
@@ -140,7 +140,7 @@ func DecryptCsv(file string, privateKey *rsa.PrivateKey) {
 		}
 
 		for i := range line {
-			line[i] = crypto.Decrypt(line[i], privateKey)
+			line[i] = crypto.DecryptRSA(line[i], privateKey)
 		}
 
 		err = writer.Write(line)

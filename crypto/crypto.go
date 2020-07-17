@@ -2,12 +2,17 @@ package crypto
 
 import (
 	"bufio"
+	"crypto/aes"
+	"crypto/cipher"
+	"crypto/md5"
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/sha256"
 	"crypto/x509"
 	"encoding/base64"
+	"encoding/hex"
 	"encoding/pem"
+	"io"
 	"log"
 	"os"
 )
@@ -54,8 +59,8 @@ func GetPublicKeyFromPem(keyName string) *rsa.PublicKey {
 	return key
 }
 
-// Encrypt - Encrypt a message
-func Encrypt(message string, publicKey *rsa.PublicKey) string {
+// EncryptRSA - Encrypt a message with RSA
+func EncryptRSA(message string, publicKey *rsa.PublicKey) string {
 	messageBytes := []byte(message)
 	label := []byte("")
 	hash := sha256.New()
@@ -77,8 +82,9 @@ func Encrypt(message string, publicKey *rsa.PublicKey) string {
 	return encrypted
 }
 
-// Decrypt - Decrypt a message
-func Decrypt(encryptedMessage string, privateKey *rsa.PrivateKey) string {
+// DecryptRSA - Decrypt a message with RSA
+func DecryptRSA(encryptedMessage string, privateKey *rsa.PrivateKey) string {
+	// Decode base64 string to bytes
 	ciphertext, err := base64.StdEncoding.DecodeString(encryptedMessage)
 
 	if err != nil {
@@ -97,10 +103,86 @@ func Decrypt(encryptedMessage string, privateKey *rsa.PrivateKey) string {
 	)
 
 	if err != nil {
-		log.Fatalf("Erro decrypting message - %s", err)
+		log.Fatalf("Error decrypting message - %s", err)
 	}
 
 	return string(messageBytes)
+}
+
+// EncryptAES - Encrypt a message with AES
+func EncryptAES(message string, key string) string {
+	// Generate aes cipher block
+	block, err := aes.NewCipher([]byte(key))
+
+	if err != nil {
+		log.Fatalf("Erro generating aes cipher - %s", err)
+	}
+
+	// Apply gmc to cipher block
+	gcm, err := cipher.NewGCM(block)
+
+	if err != nil {
+		log.Fatalf("Error applying gcm to block cipher - %s", err)
+	}
+
+	// Create nonce size byte array
+	nonce := make([]byte, gcm.NonceSize())
+
+	// Populate nonce with random sequence
+	if _, err = io.ReadFull(rand.Reader, nonce); err != nil {
+		log.Fatalf("Error populating nonce - %s", err)
+	}
+
+	// Encrypt text
+	ciphertext := gcm.Seal(nonce, nonce, []byte(message), nil)
+
+	return hex.EncodeToString(ciphertext)
+}
+
+// DecryptAES - Decrypt a message with AES
+func DecryptAES(encryptedMessage string, key string) string {
+	// Decode hex string to bytes
+	data, err := hex.DecodeString(encryptedMessage)
+
+	if err != nil {
+		log.Fatalf("Error decoding message to base64 - %s", err)
+	}
+
+	// Generate aes cipher block
+	block, err := aes.NewCipher([]byte(key))
+
+	if err != nil {
+		log.Fatalf("Error generating aes cipher - %s", err)
+	}
+
+	// Apply gmc to cipher block
+	gcm, err := cipher.NewGCM(block)
+
+	if err != nil {
+		log.Fatalf("Error applying gcm to block cipher - %s", err)
+	}
+
+	nonceSize := gcm.NonceSize()
+
+	nonce, ciphertext := data[:nonceSize], data[nonceSize:]
+
+	// Decrypt
+	message, err := gcm.Open(nil, nonce, ciphertext, nil)
+
+	if err != nil {
+		log.Fatalf("Error decrypting - %s", err)
+	}
+
+	return string(message)
+}
+
+// HashKey - Return a hash from key
+func HashKey(key string) string {
+	hasher := md5.New()
+
+	hasher.Write([]byte(key))
+
+	return hex.EncodeToString(hasher.Sum(nil))
 }
 
 func getKeyFromPem(keyName string) *pem.Block {
