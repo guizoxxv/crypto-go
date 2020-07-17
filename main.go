@@ -95,7 +95,7 @@ func main() {
 			},
 			{
 				Name:  "generate-csv",
-				Usage: "Generate random csv file",
+				Usage: "Generate csv file with random data",
 				Action: func(c *cli.Context) error {
 					limitArg := c.Args().Get(0)
 					limit, err := strconv.Atoi(limitArg)
@@ -104,7 +104,7 @@ func main() {
 						log.Fatalf("Invalid limit '%d' - %s", limit, err)
 					}
 
-					fileprocesser.Generate(limit)
+					fileprocesser.GenerateCsv(limit)
 
 					return nil
 				},
@@ -114,11 +114,10 @@ func main() {
 				Usage: "Encrypt csv file with RSA",
 				Action: func(c *cli.Context) error {
 					keyName := c.Args().Get(0)
-					fileName := c.Args().Get(1)
 
 					publicKey := crypto.GetPublicKeyFromPem(keyName)
 
-					fileprocesser.EncryptCsv(fileName, publicKey)
+					fileprocesser.EncryptCsvRSA(publicKey)
 
 					return nil
 				},
@@ -128,11 +127,32 @@ func main() {
 				Usage: "Decrypt csv file with RSA",
 				Action: func(c *cli.Context) error {
 					keyName := c.Args().Get(0)
-					fileName := c.Args().Get(1)
 
 					privateKey := crypto.GetPrivateKeyFromPem(keyName)
 
-					fileprocesser.DecryptCsv(fileName, privateKey)
+					fileprocesser.DecryptCsvRSA(privateKey)
+
+					return nil
+				},
+			},
+			{
+				Name:  "encrypt-csv-aes",
+				Usage: "Encrypt csv file with AES",
+				Action: func(c *cli.Context) error {
+					key := crypto.HashKey("password")
+
+					fileprocesser.EncryptCsvAES(key)
+
+					return nil
+				},
+			},
+			{
+				Name:  "decrypt-csv-aes",
+				Usage: "Decrypt csv file with AES",
+				Action: func(c *cli.Context) error {
+					key := crypto.HashKey("password")
+
+					fileprocesser.DecryptCsvAES(key)
 
 					return nil
 				},

@@ -15,7 +15,8 @@ import (
 	"example.com/cryptogo/crypto"
 )
 
-func Generate(limit int) {
+// GenerateCsv - Generate a csv file with random data
+func GenerateCsv(limit int) {
 	file, err := os.Create("fileprocesser/files/data.csv")
 
 	defer file.Close()
@@ -45,10 +46,11 @@ func Generate(limit int) {
 	}
 }
 
-func EncryptCsv(file string, publicKey *rsa.PublicKey) {
+// EncryptCsvRSA - Encrypt csv file with RSA
+func EncryptCsvRSA(publicKey *rsa.PublicKey) {
 	timeStart := time.Now()
 
-	inputFile, err := os.Open("fileprocesser/files/" + file + ".csv")
+	inputFile, err := os.Open("fileprocesser/files/data.csv")
 
 	defer inputFile.Close()
 
@@ -56,7 +58,7 @@ func EncryptCsv(file string, publicKey *rsa.PublicKey) {
 		log.Fatalf("Error openning csv file")
 	}
 
-	outputFile, err := os.Create("fileprocesser/files/" + file + "_encrypted.csv")
+	outputFile, err := os.Create("fileprocesser/files/data_rsa_encrypted.csv")
 
 	defer outputFile.Close()
 
@@ -102,10 +104,11 @@ func EncryptCsv(file string, publicKey *rsa.PublicKey) {
 	fmt.Printf("Duration: %.2f s", duration)
 }
 
-func DecryptCsv(file string, privateKey *rsa.PrivateKey) {
+// DecryptCsvRSA - Decrypt a csv file with RSA
+func DecryptCsvRSA(privateKey *rsa.PrivateKey) {
 	timeStart := time.Now()
 
-	inputFile, err := os.Open("fileprocesser/files/" + file + "_encrypted.csv")
+	inputFile, err := os.Open("fileprocesser/files/data_rsa_encrypted.csv")
 
 	defer inputFile.Close()
 
@@ -113,7 +116,7 @@ func DecryptCsv(file string, privateKey *rsa.PrivateKey) {
 		log.Fatalf("Error openning csv file")
 	}
 
-	outputFile, err := os.Create("fileprocesser/files/" + file + "_decrypted.csv")
+	outputFile, err := os.Create("fileprocesser/files/data_rsa_decrypted.csv")
 
 	defer outputFile.Close()
 
@@ -141,6 +144,122 @@ func DecryptCsv(file string, privateKey *rsa.PrivateKey) {
 
 		for i := range line {
 			line[i] = crypto.DecryptRSA(line[i], privateKey)
+		}
+
+		err = writer.Write(line)
+
+		if err != nil {
+			log.Fatalf("Error writing to csv file - %s", err)
+		}
+
+		fmt.Printf("Line %d processed\n", lineNumber)
+
+		lineNumber++
+	}
+
+	duration := time.Now().Sub(timeStart).Seconds()
+
+	fmt.Printf("Duration: %.2f s", duration)
+}
+
+// EncryptCsvAES - Encrypt csv file with AES
+func EncryptCsvAES(key string) {
+	timeStart := time.Now()
+
+	inputFile, err := os.Open("fileprocesser/files/data.csv")
+
+	defer inputFile.Close()
+
+	if err != nil {
+		log.Fatalf("Error openning csv file")
+	}
+
+	outputFile, err := os.Create("fileprocesser/files/data_aes_encrypted.csv")
+
+	defer outputFile.Close()
+
+	if err != nil {
+		log.Fatalf("Error creating csv file - %s", err)
+	}
+
+	reader := csv.NewReader(bufio.NewReader(inputFile))
+	writer := csv.NewWriter(outputFile)
+
+	defer writer.Flush()
+
+	lineNumber := 1
+
+	for {
+		line, err := reader.Read()
+
+		if err == io.EOF {
+			break
+		}
+
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		for i := range line {
+			line[i] = crypto.EncryptAES(line[i], key)
+		}
+
+		err = writer.Write(line)
+
+		if err != nil {
+			log.Fatalf("Error writing to csv file - %s", err)
+		}
+
+		fmt.Printf("Line %d processed\n", lineNumber)
+
+		lineNumber++
+	}
+
+	duration := time.Now().Sub(timeStart).Seconds()
+
+	fmt.Printf("Duration: %.2f s", duration)
+}
+
+// DecryptCsvAES - Decrypt a csv file with AES
+func DecryptCsvAES(key string) {
+	timeStart := time.Now()
+
+	inputFile, err := os.Open("fileprocesser/files/data_aes_encrypted.csv")
+
+	defer inputFile.Close()
+
+	if err != nil {
+		log.Fatalf("Error openning csv file")
+	}
+
+	outputFile, err := os.Create("fileprocesser/files/data_aes_decrypted.csv")
+
+	defer outputFile.Close()
+
+	if err != nil {
+		log.Fatalf("Error creating csv file - %s", err)
+	}
+
+	reader := csv.NewReader(bufio.NewReader(inputFile))
+	writer := csv.NewWriter(outputFile)
+
+	defer writer.Flush()
+
+	lineNumber := 1
+
+	for {
+		line, err := reader.Read()
+
+		if err == io.EOF {
+			break
+		}
+
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		for i := range line {
+			line[i] = crypto.DecryptAES(line[i], key)
 		}
 
 		err = writer.Write(line)
